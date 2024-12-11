@@ -1,5 +1,6 @@
 import random
 from math import gcd
+import numpy as np
 
 #funkcja do skalowania otrzymanych liczb z genaratorów do przedziału (0,1)
 def skaluj_do_0_1(lista_liczb, M):
@@ -75,14 +76,27 @@ def BBSG(p, q, ziarno, liczba_bitow, n):
 
 
 #sprawdzenie generatorów
-print(LCG(13,1,5,1,10))
-print(GLCG(1024, [3,7,68], [1,670,356], 10))
-print(GLCG2(1024, [3,7,68], [1,670,356], 10))
-print(RC4(32,[i for i in range(12)],10))
-print(BBSG(499, 547, 12345, 16, 10))
+#print(LCG(13,1,5,1,10))
+#print(GLCG2(1024, [3,7,68], [1,670,356], 10))
+#print(RC4(32,[i for i in range(12)],10))
+#print(BBSG(499, 547, 12345, 16, 10))
 
+dane_LCG = LCG(13,1,5,1,10000)
 
 #testy
 
+from scipy import stats
+from scipy.stats import chisquare
 
+#Kolmogorov-Smirnov test
+p_ks_LCG = stats.kstest(dane_LCG, "uniform", alternative = 'two-sided')
+print(p_ks_LCG)
+
+#chi2
+n_bins = np.linspace(0,1, 11)
+observed, bins = np.histogram(dane_LCG, bins=n_bins)
+
+expected = np.full(len(observed), len(dane_LCG) / len(observed))
+chi2_stat, p_chi_LCG = chisquare(f_obs=observed, f_exp=expected)
+print(p_chi_LCG)
 
