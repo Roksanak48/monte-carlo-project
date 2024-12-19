@@ -100,3 +100,57 @@ expected = np.full(len(observed), len(dane_LCG) / len(observed))
 chi2_stat, p_chi_LCG = chisquare(f_obs=observed, f_exp=expected)
 print(p_chi_LCG)
 
+#wczytanie liczb pi, e ,pierwiastek z 2 z pliku
+import urllib.request
+
+def read_digits(url):
+    data = []
+    with urllib.request.urlopen(url) as f:
+        for line in f:
+            data.append(line.strip())
+    datastring = []
+
+    for line in data:
+        datastring.append(line.decode("utf-8"))
+
+    datastring = ''.join(datastring)
+    datastring = list(map(int, list(datastring)))
+
+    return (np.array(datastring))
+
+
+digits_pi = read_digits('http://www.math.uni.wroc.pl/~rolski/Zajecia/data.pi')
+digits_e = read_digits('http://www.math.uni.wroc.pl/~rolski/Zajecia/data.e')
+digits_sqrt2 = read_digits('http://www.math.uni.wroc.pl/~rolski/Zajecia/data.sqrt2')
+print("wczytane")
+
+#frequency mobil test
+import math
+from scipy.stats import norm
+from scipy.special import erfc
+def frequency_monobit_test(binary_digits):
+    n = len(binary_digits)
+    ones = np.sum(binary_digits == 1)
+    zero = np.sum(binary_digits == 0)
+    #s = np.array([1 if bit == '1' else -1 for bit in binary_digits])
+    #S_n = np.sum(s)
+    S_n = ones-zero
+    test_statistic = S_n / math.sqrt(n)
+    # Calculate the p-value using the complementary error function
+    p_value = 2*(1-norm.cdf(abs(test_statistic)))
+    return p_value
+
+
+file_paths = {
+    "pi": digits_pi,
+    "e": digits_e,
+    "sqrt2": digits_sqrt2
+}
+
+results_2 = {}
+for name, digits_number in file_paths.items():
+    p_value = frequency_monobit_test(digits_number)
+    results_2[name] = [p_value]
+
+for number, p_value in results_2.items():
+    print(f"{number}: p-value = {p_value}")
