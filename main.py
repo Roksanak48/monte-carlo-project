@@ -87,6 +87,7 @@ dane_LCG = LCG(13,1,5,1,10000)
 
 from scipy import stats
 from scipy.stats import chisquare
+from scipy.stats import norm
 
 #Kolmogorov-Smirnov test
 p_ks_LCG = stats.kstest(dane_LCG, "uniform", alternative = 'two-sided')
@@ -99,6 +100,60 @@ observed, bins = np.histogram(dane_LCG, bins=n_bins)
 expected = np.full(len(observed), len(dane_LCG) / len(observed))
 chi2_stat, p_chi_LCG = chisquare(f_obs=observed, f_exp=expected)
 print(p_chi_LCG)
+
+#linear complexity test
+def convert_to_binary(input_list):
+    binary_list = [0 if 0 <= x < 0.5 else 1 for x in input_list]
+    return binary_list
+
+def berlekamp_massey_algorithm(sequence):
+    n = len(sequence)
+    c = np.zeros(n, dtype=int)
+    b = np.zeros(n, dtype=int)
+    c[0], b[0] = 1, 1
+    l, m, d = 0, -1, 0
+
+    for i in range(n):
+        d = sequence[i] ^ np.dot(c[1:l + 1], sequence[i - l:i][::-1]) % 2
+        if d == 1:
+            t = c.copy()
+            c[i - m:i - m + l + 1] ^= b[:l + 1]
+            if l <= i // 2:
+                l = i + 1 - l
+                m = i
+                b = t
+
+    return l
+
+def linear_complexity_test(input_list, block_size):
+    binary_sequence = convert_to_binary(input_list)
+    n = len(binary_sequence)
+    num_blocks = n // block_size
+    lc_values = []
+
+    # Divide the sequence into blocks and calculate linear complexity
+    for i in range(num_blocks):
+        block = binary_sequence[i * block_size:(i + 1) * block_size]
+        lc = berlekamp_massey_algorithm(block)
+        lc_values.append(lc)
+
+    # Expected linear complexity
+    mean_lc = (block_size / 2) + ((-1) ** block_size) / 36
+    variance = block_size * (1 / 2 - 1 / 18 + ((-1) ** block_size) * (1 / 36))
+
+    # Calculate test statistic and p-value
+    chi_squared = np.sum([(lc - mean_lc) ** 2 / variance for lc in lc_values])
+    p_value = norm.sf(chi_squared)
+
+    return p_value
+
+
+# Przykładowe dane binarne
+block_size = 500
+p_value = linear_complexity_test(dane_LCG, block_size)
+print(f"P-value: {p_value}")
+
+
 
 #wczytanie liczb pi, e ,pierwiastek z 2 z pliku
 import urllib.request
@@ -122,7 +177,6 @@ def read_digits(url):
 digits_pi = read_digits('http://www.math.uni.wroc.pl/~rolski/Zajecia/data.pi')
 digits_e = read_digits('http://www.math.uni.wroc.pl/~rolski/Zajecia/data.e')
 digits_sqrt2 = read_digits('http://www.math.uni.wroc.pl/~rolski/Zajecia/data.sqrt2')
-print("wczytane")
 
 #frequency mobil test
 import math
@@ -154,3 +208,4 @@ for name, digits_number in file_paths.items():
 
 for number, p_value in results_2.items():
     print(f"{number}: p-value = {p_value}")
+
