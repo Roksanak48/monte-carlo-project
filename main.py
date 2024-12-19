@@ -154,7 +154,6 @@ p_value = linear_complexity_test(dane_LCG, block_size)
 print(f"P-value: {p_value}")
 
 
-
 #wczytanie liczb pi, e ,pierwiastek z 2 z pliku
 import urllib.request
 
@@ -208,4 +207,30 @@ for name, digits_number in file_paths.items():
 
 for number, p_value in results_2.items():
     print(f"{number}: p-value = {p_value}")
+
+from scipy.stats import chi2
+
+def second_level_testing(p_values, s=10):
+    R = len(p_values)
+
+    # Define the intervals Pi
+    intervals = [(i / s, (i + 1) / s) for i in range(s)]
+
+    # Calculate Ei (expected number of p-values in each interval)
+    E = R / s
+
+    # Calculate Oi (observed number of p-values in each interval)
+    O = [sum(1 for p in p_values if interval[0] <= p < interval[1]) for interval in intervals]
+
+    # Calculate chi-squared statistic
+    chi_squared = sum((Oi - E) ** 2 / E for Oi in O)
+
+    # Calculate p-value for the second-level test
+    p_final = chi2.sf(chi_squared, df=s - 1)
+
+    return p_final
+
+################################
+
+
 
